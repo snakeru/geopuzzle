@@ -1,3 +1,22 @@
+function showinfo(overlay, infowindow, map, pos) {
+                        if (typeof(overlay.properties.name) === 'undefined') {
+                            return;
+                        }
+                        $('#game_bar_help').text(overlay.properties.name);
+
+                        var window_content = '<div><b>' + overlay.properties.name + '</b>';
+                        if (typeof(overlay.properties.icon) !== 'undefined') {
+                            window_content += '<br/><img class="geometry" src="' + overlay.properties.icon + '"/>';
+                        }
+                        if (typeof(overlay.properties.url) !== 'undefined') {
+                            window_content += '<br/><a href="' + overlay.properties.url + '" target="_blank">More info</a>';
+                        }
+                        window_content += '</div>';
+                        
+                        infowindow.setPosition(pos);
+                        infowindow.setContent(window_content);
+                        infowindow.open(map);
+                    }
 var app_config = {
     geojson_feeds: {
         Cantons: 'geojson/G3K12.geojson'
@@ -182,7 +201,7 @@ $(document).delegate("#map_page", "pagebeforecreate", function(){
                     "featureType": "road",
                     "elementType": "labels",
                     "stylers": [
-                        { "visibility": "off" }
+                        { "visibility": "on" }
                     ]
                 },{
                     "featureType": "road.highway",
@@ -336,6 +355,7 @@ $(document).delegate("#map_page", "pagebeforecreate", function(){
         $("#game_init").on("panelopen", map_reset);
         $("#game_init").on("panelclose", ui_init);
         function paintPolygon() {
+                infowindow.close()
             if (ids_notpainted.length === 0) {
                 $('#load_polygon').button("disable");
                 return;
@@ -371,12 +391,18 @@ $(document).delegate("#map_page", "pagebeforecreate", function(){
 
                 lastPolygon = null;
             }
-            
+
             lastPolygon = overlay.polygon;
 
+            setTimeout(function(){
+                        $('#game_bar_help').html('<img border="2" src="'+overlay.properties.icon+'" />&nbsp;'+overlay.properties.name);
+                        }, 50);
+            google.maps.event.addListener(overlay.polygon, 'click', function (ev) {
+                        showinfo(overlay, infowindow, map, ev.latLng);} );
             google.maps.event.addListener(overlay.polygon, 'dragend', function() {
+                infowindow.close()
                 overlay.polygon.set('did_not_move', false);
-                
+
                 var new_bounds = new google.maps.LatLngBounds();
                 $.each(overlay.polygon.getPaths().getArray(), function(k, path){
                     $.each(path.getArray(), function(k, point){
@@ -400,40 +426,17 @@ $(document).delegate("#map_page", "pagebeforecreate", function(){
                         zIndex: 1
                     });
                     overlay.polygon.setOptions(app_config.styles.polygon_final);
-                    
-                    google.maps.event.addListener(overlay.polygon, 'click', function(ev) {
-                        if (typeof(overlay.properties.name) === 'undefined') {
-                            return;
-                        }
-
-                        var window_content = '<div><b>' + overlay.properties.name + '</b>';
-                        if (typeof(overlay.properties.icon) !== 'undefined') {
-                            window_content += '<br/><img class="geometry" src="' + overlay.properties.icon + '"/>';
-                        }
-                        if (typeof(overlay.properties.url) !== 'undefined') {
-                            window_content += '<br/><a href="' + overlay.properties.url + '" target="_blank">More info</a>';
-                        }
-                        window_content += '</div>';
-                        
-                        infowindow.setPosition(ev.latLng);
-                        infowindow.setContent(window_content);
-                        infowindow.open(map);
-                    });
-
                     ids_matched_no += 1;
-                    
+
                     $('#polygon_stats').html(ids_matched_no + "/" + overlays.length);
-                    paintPolygon();
-                    
+                    showinfo(overlay, infowindow, map, overlay.bounds.getCenter());
+
                     if ((typeof (overlay.properties.name)) !== 'undefined') {
-                        $('#game_bar_help').html(overlay.properties.name);
+                        $('#game_bar_help').html('<img border="2" src="'+overlay.properties.icon+'" />&nbsp;'+overlay.properties.name);
                         google.maps.event.trigger(map, 'resize');
                         $('#game_bar_help').removeClass('vis_hidden');
-                        setTimeout(function(){
-                            $('#game_bar_help').addClass('vis_hidden');
-                        }, 5000);
                     }
-                    
+
                     if (ids_matched_no === overlays.length) {
                         timer.stop();
                         var timer_stats = $('#timer_stats').html();
