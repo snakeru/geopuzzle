@@ -26,7 +26,7 @@ function showinfo(overlay, infowindow, map, pos) {
                     }
 var app_config = {
     geojson_feeds: {
-        Cantons: 'geojson/G3K12.geojson'
+        Cantons: 'geojson/G3K12.json'
     },
     area_mask_fusion_tables_query: null,
     styles: {
@@ -166,6 +166,12 @@ $(document).delegate("#map_page", "pagebeforecreate", function(){
         var mapOptions = {
             center: mapBounds.getCenter(),
             zoom: 8,
+    scrollwheel: false,
+    navigationControl: false,
+    scaleControl: false,
+    draggable: false,
+
+
             mapTypeId: google.maps.MapTypeId.ROADMAP,
             
             
@@ -404,6 +410,9 @@ $(document).delegate("#map_page", "pagebeforecreate", function(){
             setTimeout(function(){hint_canton(overlay);}, 50);
             google.maps.event.addListener(overlay.polygon, 'click', function (ev) {
                         showinfo(overlay, infowindow, map, ev.latLng);} );
+            google.maps.event.addListener(overlay.polygon, 'dragstart', function() {
+                 hint_canton(overlay);
+            })
             google.maps.event.addListener(overlay.polygon, 'dragend', function() {
                 infowindow.close()
                 overlay.polygon.set('did_not_move', false);

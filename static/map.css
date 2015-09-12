@@ -83,7 +83,10 @@ body p {
 
 #game_bar_help {
     font-size: 1em;
-    bottom: -40px !important;
+/*    bottom: -40px !important; */
+    left: 100px !important;
+    top: 100px !important;
+    height: 100px !important;
 }
 
 /* START - "GOOD enough" small screen theme */
