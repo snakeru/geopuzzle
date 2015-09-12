@@ -1,8 +1,14 @@
+function hint_canton(overlay){
+                        var html = '<img border="2" class="geometry" src="'+overlay.properties.icon+'" />&nbsp;';
+                        if ($('#difficulty input:checked').val()=='easy') {
+                            html = html + '&nbsp;' + overlay.properties.name;
+                        }
+                        $('#game_bar_help').html(html);
+                        }
 function showinfo(overlay, infowindow, map, pos) {
                         if (typeof(overlay.properties.name) === 'undefined') {
                             return;
                         }
-                        $('#game_bar_help').text(overlay.properties.name);
 
                         var window_content = '<div><b>' + overlay.properties.name + '</b>';
                         if (typeof(overlay.properties.icon) !== 'undefined') {
@@ -12,10 +18,11 @@ function showinfo(overlay, infowindow, map, pos) {
                             window_content += '<br/><a href="' + overlay.properties.url + '" target="_blank">More info</a>';
                         }
                         window_content += '</div>';
-                        
+
                         infowindow.setPosition(pos);
                         infowindow.setContent(window_content);
                         infowindow.open(map);
+                        setTimeout(function(){ infowindow.close(); }, 700);
                     }
 var app_config = {
     geojson_feeds: {
@@ -253,24 +260,24 @@ $(document).delegate("#map_page", "pagebeforecreate", function(){
                 }
             ]
         };
-        
+
         function mapSetStyles(value) {
             map.setOptions({
                 styles: styles[value]
             });
-            
+
             if (mask_layer !== null) {
                 mask_layer.setMap(value === 'easy' ? map : null);
             }
         }
-        
+
         var selector = $('#difficulty input:radio');
         selector.change(function(){
             mapSetStyles($(this).val());
         });
         mapSetStyles(selector.val());
     })();
-    
+
     (function(){
         var timer = (function(){
             var s_no = 0;
@@ -310,17 +317,17 @@ $(document).delegate("#map_page", "pagebeforecreate", function(){
 
         function map_reset() {
             ids_notpainted = [];
-            
+
             $.each(overlays, function(k, overlay){
                 if ((typeof overlay.polygon) !== 'undefined') {
                     overlay.polygon.setMap(null);
                 }
-                
+
                 ids_notpainted.push(overlay.id);
             });
             ids_matched_no = 0;
             lastPolygon = null;
-            
+
             $('body').off('keyup');
         }
 
@@ -328,30 +335,30 @@ $(document).delegate("#map_page", "pagebeforecreate", function(){
             if (ua_is_mobile === false) {
                 $('#game_bar_help').removeClass('vis_hidden');
             }
-            
+
             $('#load_polygon').button("enable");
 
             timer.start();
             $('#stats_info').removeClass('hidden');
             paintPolygon();
-            
+
             $( "#target" ).keyup(function() {
               alert( "Handler for .keyup() called." );
             });
-            
+
             $('body').on('keyup', function(e){
                 if (e.keyCode === 32) {
                     paintPolygon();
                 }
             });
-            
-            google.maps.event.addListener(map, 'click', paintPolygon);
+
+//            google.maps.event.addListener(map, 'click', paintPolygon);
         }
-        
+
         var infowindow = new google.maps.InfoWindow({
             maxWidth: 200
         });
-        
+
         $("#game_init").on("panelopen", map_reset);
         $("#game_init").on("panelclose", ui_init);
         function paintPolygon() {
@@ -375,14 +382,14 @@ $(document).delegate("#map_page", "pagebeforecreate", function(){
                 visible: false
             });
             overlay.polygon.moveTo(map.getCenter());
-            
+
             overlay.polygon.setOptions(app_config.styles.polygon_draggable);
             overlay.polygon.moveTo(map.getCenter());
             overlay.polygon.setVisible(true);
 
             overlay.polygon.set('did_not_move', true);
             overlay.polygon.set('overlay_id', overlay_id);
-            
+
             // The last polygon wasn't moved by the user, he doesn't know where to put it ? 
             //      => remove it from the map for now.
             if ((lastPolygon !== null) && (lastPolygon.get('did_not_move'))) {
@@ -394,14 +401,13 @@ $(document).delegate("#map_page", "pagebeforecreate", function(){
 
             lastPolygon = overlay.polygon;
 
-            setTimeout(function(){
-                        $('#game_bar_help').html('<img border="2" src="'+overlay.properties.icon+'" />&nbsp;'+overlay.properties.name);
-                        }, 50);
+            setTimeout(function(){hint_canton(overlay);}, 50);
             google.maps.event.addListener(overlay.polygon, 'click', function (ev) {
                         showinfo(overlay, infowindow, map, ev.latLng);} );
             google.maps.event.addListener(overlay.polygon, 'dragend', function() {
                 infowindow.close()
                 overlay.polygon.set('did_not_move', false);
+                hint_canton(overlay);
 
                 var new_bounds = new google.maps.LatLngBounds();
                 $.each(overlay.polygon.getPaths().getArray(), function(k, path){
@@ -432,9 +438,7 @@ $(document).delegate("#map_page", "pagebeforecreate", function(){
                     showinfo(overlay, infowindow, map, overlay.bounds.getCenter());
 
                     if ((typeof (overlay.properties.name)) !== 'undefined') {
-                        $('#game_bar_help').html('<img border="2" src="'+overlay.properties.icon+'" />&nbsp;'+overlay.properties.name);
-                        google.maps.event.trigger(map, 'resize');
-                        $('#game_bar_help').removeClass('vis_hidden');
+                        hint_canton(overlay);
                     }
 
                     if (ids_matched_no === overlays.length) {
@@ -450,7 +454,7 @@ $(document).delegate("#map_page", "pagebeforecreate", function(){
         }
 
         $('#load_polygon').click(paintPolygon);
-        
+
         $('.new_game').click(function(){
             var yn = null;
             if ($(this).attr('data-ignore-warnings') === 'yes') {
